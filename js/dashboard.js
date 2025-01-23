@@ -1,29 +1,28 @@
-import { auth, db, signOut, onAuthStateChanged, doc, getDoc } from "./firebase.js";
+import { auth, signOut } from "./firebase.js";
 
 const logoutButton = document.getElementById("logoutButton");
 const welcomeMessage = document.getElementById("welcomeMessage");
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    // Fetch user data from Firestore
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      welcomeMessage.textContent = `Welcome, ${userData.username}!`;
-    } else {
-      console.log("No such document!");
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  if (loggedInUser) {
+    welcomeMessage.textContent = `Welcome, ${loggedInUser.username}!`;
   } else {
-    window.location.href = "login.html"; // Redirect if not logged in
+    alert("No user logged in. Redirecting to Login page...");
+    window.location.href = "login.html"; // Redirect to login
   }
 });
 
+// Handle Logout
 logoutButton.addEventListener("click", async () => {
   try {
     await signOut(auth);
+    // Clear Local Storage
+    localStorage.removeItem("loggedInUser");
     alert("Logged out successfully!");
-    window.location.href = "login.html";
+    window.location.href = "login.html"; // Redirect to login
   } catch (error) {
-    alert(error.message);
+    alert(`Error: ${error.message}`);
   }
 });

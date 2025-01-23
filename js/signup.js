@@ -13,12 +13,15 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     const user = userCredential.user;
 
     // Store user info in Firestore
-    await setDoc(doc(db, "users", user.uid), {
+    const userData = {
       username: username,
       email: email,
       createdAt: new Date(),
-    });
+    };
+    await setDoc(doc(db, "users", user.uid), userData);
 
+    // Save user data to Local Storage
+    localStorage.setItem("loggedInUser", JSON.stringify(userData));
     alert("Account created successfully!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
@@ -44,12 +47,15 @@ document.getElementById("googleSignup").addEventListener("click", async () => {
 
     // Store user info in Firestore
     const username = user.displayName || "Google User";
-    await setDoc(doc(db, "users", user.uid), {
+    const userData = {
       username: username,
       email: user.email,
       createdAt: new Date(),
-    });
+    };
+    await setDoc(doc(db, "users", user.uid), userData);
 
+    // Save user data to Local Storage
+    localStorage.setItem("loggedInUser", JSON.stringify(userData));
     alert("Signed up successfully with Google!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
