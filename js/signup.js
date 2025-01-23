@@ -16,13 +16,21 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     await setDoc(doc(db, "users", user.uid), {
       username: username,
       email: email,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     alert("Account created successfully!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
-    alert(error.message);
+    // Handle Firebase-specific errors
+    if (error.code === "auth/email-already-in-use") {
+      alert("This email is already in use. Please log in.");
+      window.location.href = "login.html"; // Redirect to Login page
+    } else if (error.code === "auth/weak-password") {
+      alert("Password is too weak. Please use a stronger password.");
+    } else {
+      alert(`Error: ${error.message}`);
+    }
   }
 });
 
@@ -31,7 +39,6 @@ document.getElementById("googleSignup").addEventListener("click", async () => {
   const provider = new GoogleAuthProvider();
 
   try {
-    // Google Sign-In with Firebase
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
@@ -40,12 +47,12 @@ document.getElementById("googleSignup").addEventListener("click", async () => {
     await setDoc(doc(db, "users", user.uid), {
       username: username,
       email: user.email,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     alert("Signed up successfully with Google!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
-    alert(error.message);
+    alert(`Error: ${error.message}`);
   }
 });
