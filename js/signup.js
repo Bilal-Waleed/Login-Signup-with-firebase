@@ -1,4 +1,13 @@
-import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, doc, setDoc } from "./firebase.js";
+import { 
+  auth, 
+  db, 
+  createUserWithEmailAndPassword, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  doc, 
+  setDoc, 
+  getDoc 
+} from "./firebase.js";
 
 // Handle Email/Password Sign-Up
 document.getElementById("signupForm").addEventListener("submit", async (e) => {
@@ -12,23 +21,27 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Store user info in Firestore
-    const userData = {
-      username: username,
-      email: email,
-      createdAt: new Date(),
-    };
-    await setDoc(doc(db, "users", user.uid), userData);
+    // Check if user data already exists in Firestore
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      // Save user info to Firestore
+      const userData = {
+        username: username,
+        email: email,
+        createdAt: new Date(),
+      };
+      await setDoc(doc(db, "users", user.uid), userData);
+    }
 
-    // Save user data to Local Storage
-    localStorage.setItem("loggedInUser", JSON.stringify(userData));
+    // Save only the UID to Local Storage
+    localStorage.setItem("loggedInUserUID", user.uid);
     alert("Account created successfully!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
     // Handle Firebase-specific errors
     if (error.code === "auth/email-already-in-use") {
       alert("This email is already in use. Please log in.");
-      window.location.href = "login.html"; // Redirect to Login page
+      window.location.href = "login.html";
     } else if (error.code === "auth/weak-password") {
       alert("Password is too weak. Please use a stronger password.");
     } else {
@@ -45,20 +58,31 @@ document.getElementById("googleSignup").addEventListener("click", async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Store user info in Firestore
-    const username = user.displayName || "Google User";
-    const userData = {
-      username: username,
-      email: user.email,
-      createdAt: new Date(),
-    };
-    await setDoc(doc(db, "users", user.uid), userData);
+    // Check if user already exists in Firestore
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      // Save user info to Firestore if not already saved
+      const username = user.displayName || "Google User";
+      const userData = {
+        username: username,
+        email: user.email,
+        createdAt: new Date(),
+      };
+      await setDoc(doc(db, "users", user.uid), userData);
+    }
 
-    // Save user data to Local Storage
-    localStorage.setItem("loggedInUser", JSON.stringify(userData));
+    // Save only the UID to Local Storage
+    localStorage.setItem("loggedInUserUID", user.uid);
     alert("Signed up successfully with Google!");
     window.location.href = "dashboard.html"; // Redirect to dashboard
   } catch (error) {
-    alert(`Error: ${error.message}`);
+    if (error.code === "auth/popup-closed-by-user") {
+      alert("Google Sign-Up was canceled. Please try again.");
+    } else if (error.code === "auth/credential-already-in-use") {
+      alert("This Google account is already linked to another account. Please log in.");
+      window.location.href = "login.html";
+    } else {
+      alert(`Error: ${error.message}`);
+    }
   }
 });

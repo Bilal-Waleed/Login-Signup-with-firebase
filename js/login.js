@@ -6,26 +6,29 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value.trim();
 
   try {
+    // Authenticate the user using Firebase Authentication
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Fetch user data from Firestore
+    // Check if the user's data exists in Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      // Save user data to Local Storage
-      localStorage.setItem("loggedInUser", JSON.stringify(userData));
+      // Save only UID to Local Storage
+      localStorage.setItem("loggedInUserUID", user.uid);
       alert("Logged in successfully!");
       window.location.href = "dashboard.html"; // Redirect to dashboard
     } else {
-      alert("User data not found. Please sign up again.");
-      window.location.href = "signup.html"; // Redirect to Sign-Up page
+      // If user does not exist in Firestore, log out and redirect to Sign-Up
+      alert("User data not found in database. Redirecting to Sign-Up...");
+      await auth.signOut();
+      window.location.href = "signup.html"; // Redirect to Sign-Up
     }
   } catch (error) {
     // Handle specific Firebase errors
     if (error.code === "auth/user-not-found") {
       alert("No account found with this email. Redirecting to Sign-Up...");
-      window.location.href = "signup.html"; // Redirect to Sign-Up page
+      window.location.href = "signup.html"; // Redirect to Sign-Up
     } else if (error.code === "auth/wrong-password") {
       alert("Incorrect password. Please try again.");
     } else {
@@ -41,17 +44,18 @@ document.getElementById("googleLogin").addEventListener("click", async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Fetch or Save user data in Firestore
+    // Check if the user's data exists in Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      // Save user data to Local Storage
-      localStorage.setItem("loggedInUser", JSON.stringify(userData));
+      // Save only UID to Local Storage
+      localStorage.setItem("loggedInUserUID", user.uid);
     } else {
+      // If user does not exist in Firestore, save their data
       const username = user.displayName || "Google User";
       const newUser = { username, email: user.email, createdAt: new Date() };
       await setDoc(doc(db, "users", user.uid), newUser);
-      localStorage.setItem("loggedInUser", JSON.stringify(newUser));
+      localStorage.setItem("loggedInUserUID", user.uid);
     }
 
     alert("Logged in with Google!");
