@@ -6,14 +6,23 @@
   <title>Dashboard</title>
   <link rel="stylesheet" href="../css/common.css">
   <script type="module" src="../js/dashboard.js"></script>
+  <link rel="icon" href="../assets/pic.jpg" type="image/jpg">
+  <!-- Add FontAwesome for the search icon -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <h1 id="welcomeMessage">Welcome!</h1>
+
+    <!-- Search Section -->
+    <div class="search-bar">
+      <input type="email" id="searchInput" placeholder="Search by email">
+      <!-- Search Icon -->
+      <i id="searchIcon" class="fas fa-search search-icon"></i>
+    </div>
+    <div id="searchResultContainer" class="result-container"></div>
+
+    <!-- Logout Button -->
     <button id="logoutButton" class="logout-btn">Logout</button>
   </div>
-  <footer>
-    <p>Copyright © 2024 by Bilal Waleed</p>
-  </footer>
-</body>
 </html>
