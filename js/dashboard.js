@@ -1,4 +1,4 @@
-import { auth, db, signOut, doc, getDoc, query, collection, where, getDocs } from "./firebase.js";
+import { auth, db, signOut, doc, getDoc, query, collection, where, getDocs, limit } from "./firebase.js";
 
 const logoutButton = document.getElementById("logout-btn");
 const welcomeMessage = document.getElementById("welcome-message");
@@ -31,27 +31,25 @@ async function loadUsers() {
   try {
     searchResultContainer.innerHTML = "";
     const usersRef = collection(db, "users");
-    const q = query(usersRef);
+
+    // Limit query to fetch only 6 users
+    const q = query(usersRef, limit(6));
     const querySnapshot = await getDocs(q);
 
-    let count = 0;
     querySnapshot.forEach(docSnapshot => {
-      if (count < 6) {
-        const userData = docSnapshot.data();
-        const userUID = docSnapshot.id;
+      const userData = docSnapshot.data();
+      const userUID = docSnapshot.id;
 
-        const userCard = document.createElement("div");
-        userCard.classList.add("user-card");
+      const userCard = document.createElement("div");
+      userCard.classList.add("user-card");
 
-        userCard.innerHTML = `
-          <p><strong>Name:</strong> ${userData.username}</p>
-          <p><strong>Email:</strong> ${userData.email}</p>
-          <p><strong>UID:</strong> ${userUID}</p>
-        `;
+      userCard.innerHTML = `
+        <p><strong>Name:</strong> ${userData.username}</p>
+        <p><strong>Email:</strong> ${userData.email}</p>
+        <p><strong>UID:</strong> ${userUID}</p>
+      `;
 
-        searchResultContainer.appendChild(userCard);
-        count++;
-      }
+      searchResultContainer.appendChild(userCard);
     });
 
   } catch (error) {
