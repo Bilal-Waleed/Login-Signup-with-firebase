@@ -1,9 +1,10 @@
 import { auth, db, signOut, doc, getDoc, query, collection, where, getDocs } from "./firebase.js";
 
-const logoutButton = document.getElementById("logoutButton");
-const welcomeMessage = document.getElementById("welcomeMessage");
-const searchInput = document.getElementById("searchInput");
-const searchResultContainer = document.getElementById("searchResultContainer");
+const logoutButton = document.getElementById("logout-btn");
+const welcomeMessage = document.getElementById("welcome-message");
+const searchInput = document.getElementById("search-input");
+const searchResultContainer = document.getElementById("search-results-container");
+const searchIcon = document.getElementById("search-icon");
 
 document.addEventListener("DOMContentLoaded", async () => {
   const loggedInUserUID = localStorage.getItem("loggedInUserUID");
@@ -12,18 +13,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userDoc = await getDoc(doc(db, "users", loggedInUserUID));
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      // Corrected string interpolation with backticks
       welcomeMessage.textContent = `Welcome, ${userData.username}!`;
     } else {
       console.log("No user data found. Redirecting to Login page...");
       localStorage.removeItem("loggedInUserUID");
       window.location.href = "login.html";
     }
+
+    loadUsers();
   } else {
     console.log("No user logged in. Redirecting to Login page...");
     window.location.href = "login.html";
   }
 });
+
+async function loadUsers() {
+  try {
+    searchResultContainer.innerHTML = "";
+    const usersRef = collection(db, "users");
+    const q = query(usersRef);
+    const querySnapshot = await getDocs(q);
+
+    let count = 0;
+    querySnapshot.forEach(docSnapshot => {
+      if (count < 6) {
+        const userData = docSnapshot.data();
+        const userUID = docSnapshot.id;
+
+        const userCard = document.createElement("div");
+        userCard.classList.add("user-card");
+
+        userCard.innerHTML = `
+          <p><strong>Name:</strong> ${userData.username}</p>
+          <p><strong>Email:</strong> ${userData.email}</p>
+          <p><strong>UID:</strong> ${userUID}</p>
+        `;
+
+        searchResultContainer.appendChild(userCard);
+        count++;
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    searchResultContainer.textContent = "An error occurred while loading users.";
+  }
+}
 
 logoutButton.addEventListener("click", async () => {
   try {
@@ -36,42 +71,56 @@ logoutButton.addEventListener("click", async () => {
   }
 });
 
-// Search when Enter key is pressed
-searchInput.addEventListener("keyup", async (event) => {
+async function handleSearch() {
+  const email = searchInput.value.trim();
+  if (!email) {
+    loadUsers(); 
+    return;
+  }
+
+  try {
+    searchResultContainer.innerHTML = "";
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      querySnapshot.forEach(docSnapshot => {
+        const userData = docSnapshot.data();
+        const userUID = docSnapshot.id;
+
+        const userCard = document.createElement("div");
+        userCard.classList.add("user-card");
+
+        userCard.innerHTML = `
+          <p><strong>Name:</strong> ${userData.username}</p>
+          <p><strong>Email:</strong> ${userData.email}</p>
+          <p><strong>UID:</strong> ${userUID}</p>
+        `;
+        searchResultContainer.appendChild(userCard);
+      });
+    } else {
+      const noUserCard = document.createElement("div");
+      noUserCard.classList.add("user-card");
+      noUserCard.innerHTML = `<p>No user found with this email.</p>`;
+      searchResultContainer.appendChild(noUserCard);
+    }
+  } catch (error) {
+    console.error("Error searching user:", error);
+    searchResultContainer.textContent = "An error occurred. Please try again.";
+  }
+}
+
+searchInput.addEventListener("keyup", (event) => {
   if (event.key === "Enter") {
-    const email = searchInput.value.trim();
-    if (!email) {
-      alert("Please enter an email to search.");
-      return;
-    }
+    handleSearch();
+  }
+});
 
-    try {
-      searchResultContainer.innerHTML = ""; // Clear previous results
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+searchIcon.addEventListener("click", handleSearch);
 
-      if (!querySnapshot.empty) {
-        querySnapshot.forEach(docSnapshot => {
-          const userData = docSnapshot.data();
-          const userUID = docSnapshot.id;
-
-          // Corrected innerHTML with proper quotes
-          const userDiv = document.createElement("div");
-          userDiv.classList.add("user-card");
-          userDiv.innerHTML = `
-            <p><strong>Name:</strong> ${userData.username}</p>
-            <p><strong>Email:</strong> ${userData.email}</p>
-            <p><strong>UID:</strong> ${userUID}</p>
-          `;
-          searchResultContainer.appendChild(userDiv);
-        });
-      } else {
-        searchResultContainer.textContent = "No user found with this email.";
-      }
-    } catch (error) {
-      console.error("Error searching user:", error);
-      searchResultContainer.textContent = "An error occurred. Please try again.";
-    }
+searchInput.addEventListener("input", () => {
+  if (searchInput.value.trim() === "") {
+    loadUsers();
   }
 });
