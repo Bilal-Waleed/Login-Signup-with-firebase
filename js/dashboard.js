@@ -32,7 +32,7 @@ async function loadUsers() {
     searchResultContainer.innerHTML = "";
     const usersRef = collection(db, "users");
 
-    // Limit query to fetch only 6 users
+
     const q = query(usersRef, limit(6));
     const querySnapshot = await getDocs(q);
 
